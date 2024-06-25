@@ -59,6 +59,15 @@ app.post('/convert', upload.single('audio'), (req, res) => {
     // Process the output as needed
     // Send the Python script output as the response
     res.status(200).send(stdout);
+
+
+    fs.unlink(outputFilePath, (err) => {
+        if (err) {
+          console.error(`Error deleting file: ${err}`);
+        } else {
+          console.log(`File deleted: ${outputFilePath}`);
+        }
+      });
 });
 
 
