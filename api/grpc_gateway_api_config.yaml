@@ -1,0 +1,25 @@
+# This file maps rpcs to their http annotations for grpc-gateway
+
+type: google.api.Service
+config_version: 3
+
+http:
+  rules:
+    # transcribe
+    - selector: cobaltspeech.transcribe.v5.TranscribeService.Version
+      get: /api/transcribe/v5/version
+    - selector: cobaltspeech.transcribe.v5.TranscribeService.ListModels
+      get: /api/transcribe/v5/list-models
+    - selector: cobaltspeech.transcribe.v5.TranscribeService.StreamingRecognize
+      get: /api/transcribe/v5/streaming-recognize
+    - selector: cobaltspeech.transcribe.v5.TranscribeService.CompileContext
+      post: /api/transcribe/v5/compile-context
+      body: "*"
+
+    # sentimo
+    - selector: cobaltspeech.sentimo.v1.SentimoService.Version
+      get: /api/sentimo/v1/version
+    - selector: cobaltspeech.sentimo.v1.SentimoService.ListModels
+      get: /api/sentimo/v1/list-models
+    - selector: cobaltspeech.sentimo.v1.SentimoService.StreamingRecognize
+      get: /api/sentimo/v1/streaming-recognize

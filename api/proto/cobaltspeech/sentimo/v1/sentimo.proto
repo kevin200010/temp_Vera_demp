@@ -1,0 +1,143 @@
+// Copyright (2023 -- present) Cobalt Speech and Language, Inc.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cobaltspeech.sentimo.v1;
+
+import "cobaltspeech/transcribe/v5/transcribe.proto";
+
+// Service that implements the Cobalt Sentimo Speech Processing API.
+service SentimoService {
+  // Queries the version of the server.
+  rpc Version(VersionRequest) returns (VersionResponse) {}
+
+  // Retrieves a list of available sentimo models.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {}
+
+  // Performs bidirectional streaming for recognizing speech and sentiment by
+  // receiving results while sending audio. This method is only available via
+  // GRPC and not via HTTP+JSON. However, a web browser may use websockets to
+  // use this service.
+  rpc StreamingRecognize(stream StreamingRecognizeRequest) returns (stream StreamingRecognizeResponse) {}
+}
+
+// The top-level message sent by the client for the `Version` method.
+message VersionRequest {}
+
+// The message sent by the server for the `Version` method.
+message VersionResponse {
+  // Version of the server handling these requests.
+  string server = 1;
+}
+
+// The top-level message sent by the client for the `ListModels` method.
+message ListModelsRequest {}
+
+// The message returned to the client by the `ListModels` method.
+message ListModelsResponse {
+  // List of models available for use that match the request.
+  repeated Model models = 1;
+}
+
+// The top-level messages sent by the client for the `StreamingRecognize`
+// method. In this streaming call, multiple `StreamingRecognizeRequest` messages
+// should be sent. The first message must contain a `RecognitionConfig` message
+// only, and all subsequent messages must contain `Audio` only. All `Audio`
+// messages must contain non-empty audio. If audio content is empty, the server
+// may choose to interpret it as end of stream and stop accepting any further
+// messages.
+message StreamingRecognizeRequest {
+  oneof request {
+    Config config = 1;
+    cobaltspeech.transcribe.v5.RecognitionAudio audio = 2;
+  }
+}
+
+// The messages returned by the server for the `ProcessStreamingAudio` request.
+// Multiple messages of this type will be delivered on the stream, for multiple
+// results, as soon as results are available from the audio submitted so far. If
+// the audio has multiple channels, the results of all channels will be
+// interleaved. Results of each individual channel will be chronological.
+// However, there is no guarantee of the order of results across channels.
+//
+// Clients should process both the `result` and `error` fields in each message.
+// At least one of these fields will be present in the message. If both `result`
+// and `error` are present, the result is still valid.
+message StreamingRecognizeResponse {
+  // Result from transcribe containing the transcript recognized from the audio being streamed. 
+  cobaltspeech.transcribe.v5.StreamingRecognizeResponse transcribe = 1;
+
+  // Predicted sentiment classes associated with this trancribe result. 
+  SentimoResponse sentimo = 2;
+  
+  // A non-fatal error message. If a server encountered a non-fatal error when
+  // processing the request, it will be returned in this message. The server will
+  // continue to process audio and produce further results. Clients can continue
+  // streaming audio even after receiving these messages. This error message is meant
+  // to be informational.
+  //
+  // An example of when these errors maybe produced: audio is sampled at a lower
+  // rate than expected by model, producing possibly less accurate results.
+  //
+  // This field will be unset if there is no error to report.
+  cobaltspeech.transcribe.v5.RecognitionError error = 3;
+}
+
+// Configuration for setting up a StreamingRecognize request.
+message Config {
+  // Unique identifier of the sentimo model to use, as obtained from a `Model` message.
+  string model_id = 1;
+
+  // Recognition config for transcribe model.
+  cobaltspeech.transcribe.v5.RecognitionConfig recognition_config = 2;
+}
+
+// Description of a Sentimo Model.
+message Model {
+  // Unique identifier of the model. This identifier is used to choose the model
+  // that should be used for recognition, and is specified in the
+  // `RecognitionConfig` message.
+  string id = 1;
+
+  // Model name. This is a concise name describing the model, and may be
+  // presented to the end-user, for example, to help choose which model to use
+  // for their recognition task.
+  string name = 2;
+
+  // Model attributes of a sentimo model.
+  ModelAttributes attributes = 3;
+}
+
+// Model attributes of a sentimo model.
+message ModelAttributes {
+  repeated string class_labels = 1;
+
+  // List of Transcribe model IDs that can be used with this sentimo model.
+  repeated string available_transcribe_model_ids = 2;
+}
+
+// Message containing predicted sentiment classes and associated metadata.
+message SentimoResponse  {
+  repeated Prediction predictions = 1;
+  uint64 start_time_ms = 2;
+  uint64 duration_ms = 3;
+}
+
+// Prediction contains the label and probability (between 0 and 1) of a given
+// output prediction.
+message Prediction {
+  string label = 1;
+  float probability = 2;
+}

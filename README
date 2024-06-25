@@ -1,0 +1,29 @@
+
+Description of directories:
+
+api:    proto files that describe the api and required for generating api source files
+        in target language.
+python-client:  an example python client
+py:     dependencies used by the python client
+web app: Node app for frontend 
+
+
+How to run the server:
+
+- Download server code
+https://s3.amazonaws.com/cobalt-release/eph2w/20240604-d7501a43ad4a/release-sentimo-8khz-1.0.0-ed38010.tar.bz2
+- Extract the tarball
+- Put the license under the release folder. License will expire at Aug 31, 2024.
+    cp cobalt.license.key ./release-sentimo-8khz-1.0.0-ed38010/
+- Run the server with the following command:
+    cd release-sentimo-8khz-1.0.0-ed38010
+    ./sentimo-server
+
+How to run the client:
+
+- create an environment and install dependencies under requirements.txt
+- add python SDK generated from proto for both sentimo and transcribe to PYTHONPATH.
+        export PYTHONPATH=$PYTHONPATH:${PWD}/py
+- run the client with the following command:
+    cd python-client
+    python client.py
