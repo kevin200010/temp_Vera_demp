@@ -80,8 +80,13 @@ def generate_analysis_table(analysis):
     scores = analysis.get('scores', [])
     table = "<table><tr><th>Emotion</th><th>Value</th></tr>"
     for score in scores:
+        if score['name'] =='love':
+            VERN_score['joy'] = score['value']
+        else:
+            VERN_score[score['name']] = score['value']
         table += f"<tr><td>{score['name']}</td><td>{score['value']}</td></tr>"
     table += "</table>"
+    # print(VERA_score)
     return table
 
 def generate_cobalt_table(response):
@@ -104,10 +109,18 @@ def generate_cobalt_table(response):
     
     # Add rows for each prediction
     for prediction in predictions:
+        lab = prediction['label']
+        sco = prediction['probability']
+        if lab == 'ang':
+            cobalt_score['anger'] = prediction['probability']*100
+        elif lab == 'hap':
+            cobalt_score['joy'] = prediction['probability']*100
+        elif lab == 'sad':
+            cobalt_score['sadness'] = prediction['probability']*100
         table += f"""
         <tr>
             <td>{prediction['label']}</td>
-            <td>{prediction['probability']}</td>
+            <td>{prediction['probability']*100}</td>
         </tr>
         """
     
@@ -115,13 +128,89 @@ def generate_cobalt_table(response):
     table += """
         </table> 
     """
-    
+    # print("-------------------------\n")
+    # print(cobalt_score)
     return table
+
+
+cobalt_score = {
+    'anger':0,
+    'fear':0,
+    'sadness':0,
+    'joy':0,
+}
+
+VERN_score = {
+    'anger':0,
+    'fear':0,
+    'sadness':0,
+    'joy':0,
+}
+def process_emotions(cobalt, vern):
+    emotion_values = {
+        'anger': 0,
+        'fear': 0,
+        'sadness': 0,
+        'joy': 0
+    }
+    signal = ''
+
+    for emotion in emotion_values.keys():
+        vern_value = vern.get(emotion, 0)
+        cobalt_value = cobalt.get(emotion, 0)  # Match the emotion abbreviations
+
+        if vern_value > 80:
+            emotion_values[emotion] = vern_value
+        
+        vern_detect = 0
+        cobalt_detect = 0
+        if vern_value > 50:
+            vern_detect = 1
+        if cobalt_value > 50:
+            cobalt_detect = 1
+
+        if vern_detect != cobalt_detect:
+            emotion_values[emotion] = vern_value
+        else:
+            if vern_value < 33:
+                emotion_values[emotion] = vern_value + 66
+                signal = 'moderate'
+            elif 33 <= vern_value < 51:
+                emotion_values[emotion] = vern_value + 80
+                signal = 'high'
+            if cobalt_value == 0 and vern_value > 66:
+                emotion_values[emotion] = vern_value - 33
+    print(emotion_values)
+    return emotion_values, signal
+
+
+# Generate HTML with color boxes
+def generate_html(emotion_values):
+    emotion_colors = {
+        'anger': 'red',
+        'fear': 'green',
+        'sadness': 'blue',
+        'joy': 'pink'
+    }
+
+    html = "<style>"
+    html += ".box { width: 70px; height: 50px; display: inline-block; margin: 10px;  border: 2px solid black; }"
+    html += "</style>"
+    html += "<h1> VERA SCORE </h1>"
+
+    for emotion, value in emotion_values.items():
+        color = emotion_colors[emotion]
+        intensity = int(value * 2.55)  # Convert percentage to intensity (0-255)
+        html += f'<div class="box" style="background-color: {color}; opacity: {intensity / 255};"><b>{emotion}<b></div>'
+
+    return html
+
+
 def processResponse(resp):
    res =MessageToDict(resp, preserving_proto_field_name=True)
    #print("Cobalt Analysis :")
    cobalt_results = res['sentimo']
-   print(res)
+#    print(res)
    #print("__________________________________")
    html_output = """"""
    html_output += generate_cobalt_table(cobalt_results)
@@ -156,6 +245,8 @@ def processResponse(resp):
    html_output +=  """<hr style="width:100%;text-align:left;margin-left:0">
                       <hr style="width:100%;text-align:left;margin-left:0">
                    """
+   processed_emotions, signal = process_emotions(cobalt_score, VERN_score)
+   html_output = generate_html(processed_emotions) + html_output
    return html_output
 #    print("__________________________________")
 #    print("__________________________________")
@@ -221,8 +312,11 @@ stream(cfg, audio)
 # print(client.StreamingRecognize(stream(cfg, audio)))
 # Streaming requests to the server.
 result = """"""
+count = 1
 for resp in client.StreamingRecognize(stream(cfg, audio)):
-    result += processResponse(resp)
+    if count:
+        result += processResponse(resp)
+        count = 0
 
 print(result)
 # return result 
