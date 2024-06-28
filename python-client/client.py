@@ -87,7 +87,8 @@ def generate_analysis_table(analysis):
         table += f"<tr><td>{score['name']}</td><td>{score['value']}</td></tr>"
     table += "</table>"
     # print(VERA_score)
-    return table
+    tab=""
+    return tab
 
 def generate_cobalt_table(response):
     # Convert the JSON response to a dictionary if it's in string format
@@ -130,7 +131,8 @@ def generate_cobalt_table(response):
     """
     # print("-------------------------\n")
     # print(cobalt_score)
-    return table
+    tab=""
+    return tab
 
 
 cobalt_score = {
@@ -180,7 +182,7 @@ def process_emotions(cobalt, vern):
                 signal = 'high'
             if cobalt_value == 0 and vern_value > 66:
                 emotion_values[emotion] = vern_value - 33
-    print(emotion_values)
+    # print(emotion_values)
     return emotion_values, signal
 
 
@@ -194,14 +196,14 @@ def generate_html(emotion_values):
     }
 
     html = "<style>"
-    html += ".box { width: 70px; height: 50px; display: inline-block; margin: 10px;  border: 2px solid black; }"
+    html += ".box { width: 20%; height: 100px; display: inline-block; margin: 10px; border: 2px solid black; border-radius: 15px; text-align: center; line-height: 50px; font-size: 40px; color: white; font-weight: bold; }"
     html += "</style>"
     html += "<h1> VERA SCORE </h1>"
 
     for emotion, value in emotion_values.items():
         color = emotion_colors[emotion]
-        intensity = int(value * 2.55)  # Convert percentage to intensity (0-255)
-        html += f'<div class="box" style="background-color: {color}; opacity: {intensity / 255};"><b>{emotion}<b></div>'
+        intensity = int(value * 2.55) +10 # Convert percentage to intensity (0-255)
+        html += f'<div class="box" style="background-color: {color}; opacity: {intensity / 255}; border: 2px solid black">{emotion} <br> {value}<b></div>'
 
     return html
 
@@ -214,7 +216,7 @@ def processResponse(resp):
    #print("__________________________________")
    html_output = """"""
    html_output += generate_cobalt_table(cobalt_results)
-   html_output +=  """<hr style="width:100%;text-align:left;margin-left:0">"""
+#    html_output +=  """<hr style="width:10%;text-align:left;margin-left:0">"""
    for k in res["transcribe"]['result'].keys():
        for i in res["transcribe"]['result']["alternatives"]:
            #print(i)
@@ -230,21 +232,21 @@ def processResponse(resp):
                 # Parse the JSON response
                 analysis = VERN_response.json()
                 # print('VERN Response : ', analysis)
-                html_output += """<h3>VERN Response</h3>"""
+                # html_output += """<h3>VERN Response</h3>"""
                 analysis_table = generate_analysis_table(analysis)
-                html_output += """
-                <tr>
-                    <td>Translations : {}</td>
-                    <td>{}</td>
-                </tr>
-                """.format(text, analysis_table)
+                # html_output += """
+                # <tr>
+                #     <td>Translations : {}</td>
+                #     <td>{}</td>
+                # </tr>
+                # """.format(text, analysis_table)
                 # print(html_output)
            else:
                 print('Failed to get response. Status code:', VERN_response.status_code)
                 print('Response:', VERN_response)
-   html_output +=  """<hr style="width:100%;text-align:left;margin-left:0">
-                      <hr style="width:100%;text-align:left;margin-left:0">
-                   """
+#    html_output +=  """<hr style="width:100%;text-align:left;margin-left:0">
+#                       <hr style="width:100%;text-align:left;margin-left:0">
+#                    """
    processed_emotions, signal = process_emotions(cobalt_score, VERN_score)
    html_output = generate_html(processed_emotions) + html_output
    return html_output

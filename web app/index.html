@@ -18,7 +18,7 @@
 
     #container {
       text-align: center;
-      max-width: 400px;
+      /* max-width: 400px; */
       width: 100%;
     }
 
@@ -45,6 +45,7 @@
     }
 
     #resultContainer {
+      width: 100%;
       margin-top: 20px;
       font-size: 18px;
     }
@@ -52,8 +53,8 @@
 </head>
 <body>
   <div id="container">
-    <h1>Voice Recorder</h1>
-    <button id="recordButton">Record</button>
+    <h1>Voice Analysis</h1>
+    <button id="recordButton">▶️</button>
     <button id="stopButton" disabled>Stop</button>
     <audio id="audioPlayback" controls style="display: none;"></audio>
     <div id="resultContainer"></div>
